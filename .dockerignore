@@ -1,0 +1,17 @@
+*.md
+scripts
+banner
+**\.git
+**\.github
+**\.idea
+*.log
+
+
+\.DS_Store
+
+# exclude target dirs
+dist/
+out/
+target/
+
+Dockerfile
