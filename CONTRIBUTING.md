@@ -1,4 +1,4 @@
-# Contributing to **the project**
+# Contributing to **bulkanalyzer**
 
 This is an open source project and accepts contributions from the community. These contributions
 are made in the form of Issues or

@@ -1,7 +1,5 @@
 <p align="center">
-  <img alt="PROJECT_TITLE_HERE Logo" src="./readme/cover.png" width="400px"></img>
-  <h3 align="center"><b>PROJECT_TITLE_HERE</b></h3>
-  <p align="center">PROJECT_DESCRIPTION_HERE</p>
+  <img alt="BulkAnalyzer Logo" src="./readme/cover.png" width="auto"></img>
 </p>
 
 <p align="center">
@@ -13,24 +11,6 @@
 ## Latest release
 
 [**Download**](../../releases)
-
-## Template features
-
-* README file image header.
-* Badge collection section in README
-* Link to releases download in README.
-* Support for [Stale bot](https://github.com/marketplace/stale).
-* Support for [Semgrep](https://github.com/marketplace/semgrep-devs).
-* Default templates for bug reporting, feature request.
-* Default SECURITY policy set up.
-* License Block.
-
-## Steps after cloning the repository
-
-Go to Github project settings and add the following secrets for
-
-* CODECOV:
-* SEMGREP:`SEMGREP_APP_TOKEN`
 
 ## Contributing
 
