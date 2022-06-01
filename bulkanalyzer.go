@@ -80,11 +80,14 @@ func triggerScanJob(address string, code string) []string {
 	start := time.Now()
 	result, err := runScanCode("bash", []string{"-c", scanContract}...)
 	if err != nil {
-
+		return []string{"0", "", "", "", "", "0", "true"}
 	}
 	diff := time.Since(start).Milliseconds()
 	output := parseOyenteOutput(result)
+	// append time value
 	output = append(output, fmt.Sprintf("%d", diff))
+	// append no errored flag value
+	output = append(output, "false")
 	fmt.Println(output)
 	return output
 }
