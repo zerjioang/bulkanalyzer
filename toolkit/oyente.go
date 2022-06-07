@@ -2,6 +2,7 @@ package toolkit
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"regexp"
 )
@@ -15,8 +16,9 @@ rm -rf /tmp/%s.bytecode"`
 
 var (
 	pushRegex, _ = regexp.Compile(`incomplete push instruction at \d+`)
+	falseBytes   = []byte("false")
 	// OYENTE tool failed response
-	failedResponse = [][]byte{[]byte("0"), []byte(""), []byte(""), []byte(""), []byte(""), []byte("0"), []byte("true")}
+	failedResponse = [][]byte{[]byte("0.0"), falseBytes, falseBytes, falseBytes, falseBytes, []byte("0"), []byte("true")}
 )
 
 // runArbitraryCode("docker", args("run -it -d --name oyente luongnguyen/oyente")...)
@@ -27,7 +29,10 @@ var (
 // rm -rf /tmp/0x5519ab3fa3fa3a5adce56bc57905195d1599f6b2.bytecode"
 
 // OyenteParser is the parser designed to convert OYENTE tool output to structured format
-func OyenteParser(out []byte) [][]byte {
+func OyenteParser(out []byte) ([][]byte, error) {
+	if bytes.Contains(out, []byte("Traceback (")) {
+		return nil, errors.New("oyente failed to run")
+	}
 	none := []byte("")
 	// remove error logs
 	// incomplete push instruction at 3529
@@ -55,7 +60,7 @@ func OyenteParser(out []byte) [][]byte {
 		out = out[0 : len(out)-1]
 	}
 	chunks := bytes.Split(out, []byte(","))
-	return chunks
+	return chunks, nil
 }
 
 // OyenteCommand generates the CLI command that triggers the analysis
@@ -67,6 +72,6 @@ func OyenteCommand(address string, code string) string {
 }
 
 // OyenteFailedResult returns OYENTE default structured failed result data
-func OyenteFailedResult() [][]byte {
-	return failedResponse
+func OyenteFailedResult() ([][]byte, error) {
+	return failedResponse, nil
 }

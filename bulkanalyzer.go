@@ -84,6 +84,7 @@ func (bulk *Analyzer) Run(csvPath string, opts *Options) error {
 	if bulk.opts.SkipHeaderRow {
 		_, _ = csvReader.Read()
 	}
+	idx := uint64(0)
 	for readErr == nil {
 		row, readErr = csvReader.Read()
 		if readErr != nil {
@@ -94,19 +95,22 @@ func (bulk *Analyzer) Run(csvPath string, opts *Options) error {
 		}
 		address := row[1]
 		code := row[2]
-		log.Printf("Analyzing contract %s with code size %d:\n", address, len(code))
-		if opts.Remove0xPrefix {
-			if len(code) > 2 && code[0] == '0' && code[1] == 'x' {
-				code = code[2:]
+		if code == "0x" {
+			// skip empty bytecodes (those destructed)
+			continue
+		}
+		result, scanErr := bulk.triggerScanJob(idx, address, code)
+		if scanErr == nil {
+			// append sample identifier to the result
+			result = append(result, []byte(address))
+			if writeErr := csvWriter.Write(chunksToCSVrow(result)); writeErr != nil {
+				log.Println("error while csv writing:", writeErr)
+			}
+			if opts.Debug {
+				log.Println(chunksToString(result))
 			}
 		}
-		result := bulk.triggerScanJob(address, code)
-		// append sample identifier to the result
-		result = append(result, []byte(address))
-		if writeErr := csvWriter.Write(chunksToCSVrow(result)); writeErr != nil {
-			log.Println("error while csv writing:", writeErr)
-		}
-		log.Println(chunksToString(result))
+		idx++
 	}
 	return nil
 }
@@ -118,7 +122,8 @@ func (bulk *Analyzer) runTargetContainer(containerIdx uint) {
 	log.Println("Checking container", imageName)
 }
 
-func (bulk *Analyzer) triggerScanJob(address string, code string) [][]byte {
+func (bulk *Analyzer) triggerScanJob(idx uint64, address string, code string) ([][]byte, error) {
+	log.Printf("[%d] Analyzing contract %s with code size %d:\n", idx, address, len(code))
 	// first thing: input data validation to avoid RCE
 	if err := IsValidAddress(address); err != nil {
 		panic(err)
@@ -126,7 +131,6 @@ func (bulk *Analyzer) triggerScanJob(address string, code string) [][]byte {
 	if err := IsValidBytecode(code); err != nil {
 		panic(err)
 	}
-	// run docker image in background
 	opts := bulk.opts
 	if opts.Remove0xPrefix {
 		if len(code) > 2 && code[0] == '0' && code[1] == 'x' {
@@ -141,12 +145,15 @@ func (bulk *Analyzer) triggerScanJob(address string, code string) [][]byte {
 		return opts.OnFailedReturn()
 	}
 	diff := time.Since(start).Milliseconds()
-	output := opts.Parser([]byte(result))
+	output, err := opts.Parser([]byte(result))
+	if err != nil {
+		return opts.OnFailedReturn()
+	}
 	// append time value
 	output = append(output, []byte(fmt.Sprintf("%d", diff)))
 	// append no errored flag value
 	output = append(output, []byte("false"))
-	return output
+	return output, nil
 }
 
 // runArbitraryCode runs given command with arguments

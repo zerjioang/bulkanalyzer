@@ -21,6 +21,7 @@ func TestBulkAnalyze(t *testing.T) {
 			SkipHeaderRow:  true,
 			Parser:         toolkit.OyenteParser,
 			BuildCommand:   toolkit.OyenteCommand,
+			OnFailedReturn: toolkit.OyenteFailedResult,
 		}))
 	})
 	t.Run("sample-csv-100", func(t *testing.T) {
@@ -32,6 +33,7 @@ func TestBulkAnalyze(t *testing.T) {
 			SkipHeaderRow:  true,
 			Parser:         toolkit.OyenteParser,
 			BuildCommand:   toolkit.OyenteCommand,
+			OnFailedReturn: toolkit.OyenteFailedResult,
 		}))
 	})
 	t.Run("sample-csv-1000", func(t *testing.T) {
@@ -43,6 +45,7 @@ func TestBulkAnalyze(t *testing.T) {
 			SkipHeaderRow:  true,
 			Parser:         toolkit.OyenteParser,
 			BuildCommand:   toolkit.OyenteCommand,
+			OnFailedReturn: toolkit.OyenteFailedResult,
 		}))
 	})
 	t.Run("sample-csv-10000", func(t *testing.T) {
@@ -54,6 +57,7 @@ func TestBulkAnalyze(t *testing.T) {
 			SkipHeaderRow:  true,
 			Parser:         toolkit.OyenteParser,
 			BuildCommand:   toolkit.OyenteCommand,
+			OnFailedReturn: toolkit.OyenteFailedResult,
 		}))
 	})
 	t.Run("sample-csv-100000", func(t *testing.T) {
@@ -65,6 +69,7 @@ func TestBulkAnalyze(t *testing.T) {
 			SkipHeaderRow:  true,
 			Parser:         toolkit.OyenteParser,
 			BuildCommand:   toolkit.OyenteCommand,
+			OnFailedReturn: toolkit.OyenteFailedResult,
 		}))
 	})
 	t.Run("sample-csv-500000", func(t *testing.T) {
@@ -76,6 +81,7 @@ func TestBulkAnalyze(t *testing.T) {
 			SkipHeaderRow:  true,
 			Parser:         toolkit.OyenteParser,
 			BuildCommand:   toolkit.OyenteCommand,
+			OnFailedReturn: toolkit.OyenteFailedResult,
 		}))
 	})
 
@@ -93,8 +99,9 @@ INFO:symExec:	  Timestamp Dependency: 		         False
 INFO:symExec:	  Re-Entrancy Vulnerability: 		     False
 INFO:symExec:	====== Analysis Completed ======
 `
-		chunks := toolkit.OyenteParser([]byte(exampleOutput))
+		chunks, err := toolkit.OyenteParser([]byte(exampleOutput))
 		str := chunksToString(chunks)
 		assert.Equal(t, str, "100.0 false false false false")
+		assert.NoError(t, err)
 	})
 }

@@ -13,9 +13,11 @@ type Options struct {
 	// flag to indicate if we need to skip CSV header row
 	SkipHeaderRow bool
 	// function used to parse the results of the analysis
-	Parser func(out []byte) [][]byte
+	Parser func(out []byte) ([][]byte, error)
 	// function used to build the command that triggers the analysis
 	BuildCommand func(address string, code string) string
 	// function that returns a pre-defined failed return result in a structured format
-	OnFailedReturn func() [][]byte
+	OnFailedReturn func() ([][]byte, error)
+	// debug flag to enable a more verbose output
+	Debug bool
 }

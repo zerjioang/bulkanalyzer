@@ -16,6 +16,10 @@ We do not recommend to use this tool in any production related scenario. It stil
 
 * Docker installed and properly configured.
 
+## Built-in analyzers support
+
+* Oyente: at single core speed: 1.66 contracts/second
+
 ## Latest release
 
 [**Download**](../../releases)
