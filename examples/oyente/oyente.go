@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/zerjioang/bulkanayzer"
-	"github.com/zerjioang/bulkanayzer/toolkit"
+	"github.com/zerjioang/bulkanalyzer"
+	"github.com/zerjioang/bulkanalyzer/toolkit"
 	"log"
 	"os"
 )

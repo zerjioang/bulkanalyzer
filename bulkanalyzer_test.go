@@ -2,13 +2,13 @@ package bulkanalyzer
 
 import (
 	"github.com/stretchr/testify/assert"
-	"github.com/zerjioang/bulkanayzer/toolkit"
+	"github.com/zerjioang/bulkanalyzer/toolkit"
 	"testing"
 )
 
 const (
 	// TODO remove this hardcoded variable and convert it to ENV
-	basepath = "/home/sergio/GolandProjects/bulkanayzer/"
+	basepath = "/home/sergio/GolandProjects/bulkanalyzer/"
 )
 
 func TestBulkAnalyze(t *testing.T) {
