@@ -1,4 +1,4 @@
-module github.com/zerjioang/bulkanayzer
+module github.com/zerjioang/bulkanalyzer
 
 go 1.18
 

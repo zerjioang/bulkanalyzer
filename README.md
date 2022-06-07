@@ -5,9 +5,9 @@
 
 [![made-with-Go](https://img.shields.io/badge/Made%20with-Go-1f425f.svg)](https://go.dev/)
 [![License](https://img.shields.io/badge/LICENSE-GPLv3-brightgreen.svg)](https://go.dev/)
-[![GitHub go.mod Go version of a Go module](https://img.shields.io/github/go-mod/go-version/gomods/athens.svg)](https://github.com/gomods/athens)
-[![GoDoc reference example](https://img.shields.io/badge/godoc-reference-blue.svg)](https://godoc.org/nanomsg.org/go/mangos/v2)
-[![GoReportCard example](https://goreportcard.com/badge/github.com/nanomsg/mangos)](https://goreportcard.com/report/github.com/nanomsg/mangos)
+[![GitHub go.mod Go version of a Go module](https://img.shields.io/github/go-mod/go-version/zerjioang/bulkanalyzer.svg)](https://github.com/zerjioang/bulkanalyzer)
+[![GoDoc reference example](https://img.shields.io/badge/godoc-reference-blue.svg)](https://godoc.org/github.com/zerjioang/bulkanalyzer)
+[![GoReportCard example](https://goreportcard.com/badge/github.com/zerjioang/bulkanalyzer)](https://goreportcard.com/report/github.com/zerjioang/bulkanalyzer)
 
 ## Project status: Work in progress
 We do not recommend to use this tool in any production related scenario. It still under development, and its not widely tested.
