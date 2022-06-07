@@ -7,6 +7,12 @@
     <a href="LICENSE"><img alt="Software License" src="http://img.shields.io/:license-GPLv3-brightgreen.svg?style=flat-square"></a>
 </p>
 
+## Project status: Work in progress
+We do not recommend to use this tool in any production related scenario. It still under development, and its not widely tested.
+
+## Requirements
+
+* Docker installed and properly configured.
 
 ## Latest release
 

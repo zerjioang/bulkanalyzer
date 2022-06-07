@@ -2,6 +2,7 @@ package bulkanalyzer
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/csv"
 	"errors"
 	"fmt"
@@ -20,6 +21,10 @@ python oyente.py -s /tmp/%s.bytecode -b && \
 rm -rf /tmp/%s.bytecode"`
 )
 
+var (
+	failedResponse = [][]byte{[]byte("0"), []byte(""), []byte(""), []byte(""), []byte(""), []byte("0"), []byte("true")}
+)
+
 func ExistFile(path string) bool {
 	if _, err := os.Stat(path); errors.Is(err, os.ErrNotExist) {
 		// path/to/whatever does not exist
@@ -28,7 +33,7 @@ func ExistFile(path string) bool {
 	return true
 }
 
-func BulkAnalyze(csvPath string, options *Options) error {
+func BulkAnalyze(csvPath string, opts *Options) error {
 	if !ExistFile(csvPath) {
 		return errors.New("provided CSV file does not exists")
 	}
@@ -41,6 +46,17 @@ func BulkAnalyze(csvPath string, options *Options) error {
 	// remember to close the file at the end of the program
 	defer f.Close()
 
+	if opts.MaxContainers == 0 {
+		// at least 1 containers is required always
+		opts.MaxContainers = 1
+	}
+
+	// now make sure required containers exists and are running
+	// if none found, we run the required ones
+	for i := uint(0); i < opts.MaxContainers; i++ {
+		runTargetContainer(i, opts.DockerImage)
+	}
+
 	// read csv values using csv.Reader
 	csvReader := csv.NewReader(f)
 	var readErr error
@@ -52,9 +68,11 @@ func BulkAnalyze(csvPath string, options *Options) error {
 		}
 		address := row[1]
 		code := row[2]
+		// sequential analysis
+		// TODO add support for concurrent jobs
 		if len(code) > 2 && code[0] == '0' && code[1] == 'x' {
 			log.Printf("Analyzing contract %s with code size %d:\n", address, len(code))
-			result := triggerScanJob(address, code)
+			result := triggerScanJob(address, code, opts)
 			fmt.Println(result)
 		}
 	}
@@ -64,7 +82,19 @@ func BulkAnalyze(csvPath string, options *Options) error {
 	return nil
 }
 
-func triggerScanJob(address string, code string) []string {
+// runTargetContainer will run the requested docker image into a new container
+func runTargetContainer(containerIdx uint, dockerImageName string) {
+
+}
+
+func triggerScanJob(address string, code string, opts *Options) [][]byte {
+	// first thing: input data validation to avoid RCE
+	if err := IsValidAddress(address); err != nil {
+		panic(err)
+	}
+	if err := IsValidBytecode(code); err != nil {
+		panic(err)
+	}
 	// run docker image in background
 	// runArbitraryCode("docker", args("run -it -d --name oyente luongnguyen/oyente")...)
 	// 1 copy code to file and run the analysis
@@ -72,7 +102,13 @@ func triggerScanJob(address string, code string) []string {
 	// cd /oyente/oyente && \
 	// python oyente.py -s /tmp/0x5519ab3fa3fa3a5adce56bc57905195d1599f6b2.bytecode -b \
 	// rm -rf /tmp/0x5519ab3fa3fa3a5adce56bc57905195d1599f6b2.bytecode"
-	scanContract := fmt.Sprintf(runCommand, strings.ReplaceAll(code, "0x", ""), address, address, address)
+	if opts.Remove0xPrefix {
+		if len(code) > 2 && code[0] == '0' && code[1] == 'x' {
+			// remove 0x prefix from bytecode. this is a requirement of OYENTE (for example)
+			code = code[2:]
+		}
+	}
+	scanContract := fmt.Sprintf(runCommand, code, address, address, address)
 	// 2 run analysis
 	// example command
 	// docker exec -i oyente python /oyente/oyente/oyente.py -s /tmp/0x5519ab3fa3fa3a5adce56bc57905195d1599f6b2.bytecode -b
@@ -80,15 +116,14 @@ func triggerScanJob(address string, code string) []string {
 	start := time.Now()
 	result, err := runScanCode("bash", []string{"-c", scanContract}...)
 	if err != nil {
-		return []string{"0", "", "", "", "", "0", "true"}
+		return failedResponse
 	}
 	diff := time.Since(start).Milliseconds()
-	output := parseOyenteOutput(result)
+	output := OyenteParser([]byte(result))
 	// append time value
-	output = append(output, fmt.Sprintf("%d", diff))
+	output = append(output, []byte(fmt.Sprintf("%d", diff)))
 	// append no errored flag value
-	output = append(output, "false")
-	fmt.Println(output)
+	output = append(output, []byte("false"))
 	return output
 }
 
@@ -118,29 +153,30 @@ func runScanCode(command string, args ...string) (string, error) {
 	return b.String(), err
 }
 
-func parseOyenteOutput(out string) []string {
-	out = strings.ReplaceAll(out, "WARNING:root:You are using evm version 1.8.2. The supported version is 1.7.3", "")
-	out = strings.ReplaceAll(out, "WARNING:root:You are using solc version 0.4.21, The latest supported version is 0.4.19", "")
-	out = strings.ReplaceAll(out, "============ Results ===========", "")
-	out = strings.ReplaceAll(out, "INFO:symExec:\t====== Analysis Completed ======", "")
-	out = strings.ReplaceAll(out, `INFO:symExec:	`, "")
-	out = strings.ReplaceAll(out, `EVM Code Coverage:`, "")
-	out = strings.ReplaceAll(out, `Callstack Depth Attack Vulnerability:`, "")
-	out = strings.ReplaceAll(out, `Transaction-Ordering Dependence (TOD):`, "")
-	out = strings.ReplaceAll(out, `Timestamp Dependency:`, "")
-	out = strings.ReplaceAll(out, `Re-Entrancy Vulnerability:`, "")
-	out = strings.ReplaceAll(out, " ", "")
-	out = strings.ReplaceAll(out, ` `, "")
-	out = strings.ReplaceAll(out, "\n", "")
-	out = strings.ReplaceAll(out, "\r", "")
-	out = strings.ReplaceAll(out, "\t", "")
-	out = strings.ReplaceAll(out, "\b", "")
-	out = strings.ReplaceAll(out, "False", `false,`)
-	out = strings.ReplaceAll(out, "True", `true,`)
-	out = strings.ReplaceAll(out, `%`, ",")
+func OyenteParser(out []byte) [][]byte {
+	none := []byte("")
+	out = bytes.ReplaceAll(out, []byte("WARNING:root:You are using evm version 1.8.2. The supported version is 1.7.3"), none)
+	out = bytes.ReplaceAll(out, []byte("WARNING:root:You are using solc version 0.4.21, The latest supported version is 0.4.19"), none)
+	out = bytes.ReplaceAll(out, []byte("============ Results ==========="), none)
+	out = bytes.ReplaceAll(out, []byte("====== Analysis Completed ======"), none)
+	out = bytes.ReplaceAll(out, []byte(`INFO:symExec:`), none)
+	out = bytes.ReplaceAll(out, []byte(`EVM Code Coverage:`), none)
+	out = bytes.ReplaceAll(out, []byte(`Callstack Depth Attack Vulnerability:`), none)
+	out = bytes.ReplaceAll(out, []byte(`Transaction-Ordering Dependence (TOD):`), none)
+	out = bytes.ReplaceAll(out, []byte(`Timestamp Dependency:`), none)
+	out = bytes.ReplaceAll(out, []byte(`Re-Entrancy Vulnerability:`), none)
+	out = bytes.ReplaceAll(out, []byte(" "), none)
+	out = bytes.ReplaceAll(out, []byte(` `), none)
+	out = bytes.ReplaceAll(out, []byte("\n"), none)
+	out = bytes.ReplaceAll(out, []byte("\r"), none)
+	out = bytes.ReplaceAll(out, []byte("\t"), none)
+	out = bytes.ReplaceAll(out, []byte("\b"), none)
+	out = bytes.ReplaceAll(out, []byte("False"), []byte(`false,`))
+	out = bytes.ReplaceAll(out, []byte("True"), []byte(`true,`))
+	out = bytes.ReplaceAll(out, []byte(`%`), []byte(","))
 	if out[len(out)-1] == ',' {
 		out = out[0 : len(out)-1]
 	}
-	chunks := strings.Split(out, ",")
+	chunks := bytes.Split(out, []byte(","))
 	return chunks
 }
