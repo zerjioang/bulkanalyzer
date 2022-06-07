@@ -2,7 +2,6 @@ package bulkanalyzer
 
 import (
 	"bufio"
-	"bytes"
 	"encoding/csv"
 	"errors"
 	"fmt"
@@ -51,6 +50,15 @@ func BulkAnalyze(csvPath string, opts *Options) error {
 		opts.MaxContainers = 1
 	}
 
+	// make sure we have a valid parser set
+	if opts.Parser == nil {
+		return errors.New("a result parser is required before running the analysis")
+	}
+	// make sure we have a valid command builder set
+	if opts.BuildCommand == nil {
+		return errors.New("a command builder is required before running the analysis")
+	}
+
 	// now make sure required containers exists and are running
 	// if none found, we run the required ones
 	for i := uint(0); i < opts.MaxContainers; i++ {
@@ -96,30 +104,20 @@ func triggerScanJob(address string, code string, opts *Options) [][]byte {
 		panic(err)
 	}
 	// run docker image in background
-	// runArbitraryCode("docker", args("run -it -d --name oyente luongnguyen/oyente")...)
-	// 1 copy code to file and run the analysis
-	// docker exec -it oyente bash -c "echo '0x6d4946c0e9f43f4dee607b0ef1fa1c3318585733ff' > /tmp/0x5519ab3fa3fa3a5adce56bc57905195d1599f6b2.bytecode && \
-	// cd /oyente/oyente && \
-	// python oyente.py -s /tmp/0x5519ab3fa3fa3a5adce56bc57905195d1599f6b2.bytecode -b \
-	// rm -rf /tmp/0x5519ab3fa3fa3a5adce56bc57905195d1599f6b2.bytecode"
 	if opts.Remove0xPrefix {
 		if len(code) > 2 && code[0] == '0' && code[1] == 'x' {
 			// remove 0x prefix from bytecode. this is a requirement of OYENTE (for example)
 			code = code[2:]
 		}
 	}
-	scanContract := fmt.Sprintf(runCommand, code, address, address, address)
-	// 2 run analysis
-	// example command
-	// docker exec -i oyente python /oyente/oyente/oyente.py -s /tmp/0x5519ab3fa3fa3a5adce56bc57905195d1599f6b2.bytecode -b
-	// 3 get the results
+	scanContract := opts.BuildCommand(address, code)
 	start := time.Now()
-	result, err := runScanCode("bash", []string{"-c", scanContract}...)
+	result, err := runArbitraryCode("bash", []string{"-c", scanContract}...)
 	if err != nil {
 		return failedResponse
 	}
 	diff := time.Since(start).Milliseconds()
-	output := OyenteParser([]byte(result))
+	output := opts.Parser([]byte(result))
 	// append time value
 	output = append(output, []byte(fmt.Sprintf("%d", diff)))
 	// append no errored flag value
@@ -127,21 +125,7 @@ func triggerScanJob(address string, code string, opts *Options) [][]byte {
 	return output
 }
 
-func runArbitraryCode(command string, args ...string) {
-	cmd := exec.Command(command, args...)
-	stderr, _ := cmd.StderrPipe()
-	err := cmd.Start()
-	scanner := bufio.NewScanner(stderr)
-	var b strings.Builder
-	for scanner.Scan() {
-		b.WriteString(scanner.Text())
-	}
-	if err != nil {
-		log.Println(err.Error())
-	}
-}
-
-func runScanCode(command string, args ...string) (string, error) {
+func runArbitraryCode(command string, args ...string) (string, error) {
 	cmd := exec.Command(command, args...)
 	stderr, _ := cmd.StderrPipe()
 	err := cmd.Start()
@@ -151,32 +135,4 @@ func runScanCode(command string, args ...string) (string, error) {
 		b.WriteString(scanner.Text())
 	}
 	return b.String(), err
-}
-
-func OyenteParser(out []byte) [][]byte {
-	none := []byte("")
-	out = bytes.ReplaceAll(out, []byte("WARNING:root:You are using evm version 1.8.2. The supported version is 1.7.3"), none)
-	out = bytes.ReplaceAll(out, []byte("WARNING:root:You are using solc version 0.4.21, The latest supported version is 0.4.19"), none)
-	out = bytes.ReplaceAll(out, []byte("============ Results ==========="), none)
-	out = bytes.ReplaceAll(out, []byte("====== Analysis Completed ======"), none)
-	out = bytes.ReplaceAll(out, []byte(`INFO:symExec:`), none)
-	out = bytes.ReplaceAll(out, []byte(`EVM Code Coverage:`), none)
-	out = bytes.ReplaceAll(out, []byte(`Callstack Depth Attack Vulnerability:`), none)
-	out = bytes.ReplaceAll(out, []byte(`Transaction-Ordering Dependence (TOD):`), none)
-	out = bytes.ReplaceAll(out, []byte(`Timestamp Dependency:`), none)
-	out = bytes.ReplaceAll(out, []byte(`Re-Entrancy Vulnerability:`), none)
-	out = bytes.ReplaceAll(out, []byte(" "), none)
-	out = bytes.ReplaceAll(out, []byte(` `), none)
-	out = bytes.ReplaceAll(out, []byte("\n"), none)
-	out = bytes.ReplaceAll(out, []byte("\r"), none)
-	out = bytes.ReplaceAll(out, []byte("\t"), none)
-	out = bytes.ReplaceAll(out, []byte("\b"), none)
-	out = bytes.ReplaceAll(out, []byte("False"), []byte(`false,`))
-	out = bytes.ReplaceAll(out, []byte("True"), []byte(`true,`))
-	out = bytes.ReplaceAll(out, []byte(`%`), []byte(","))
-	if out[len(out)-1] == ',' {
-		out = out[0 : len(out)-1]
-	}
-	chunks := bytes.Split(out, []byte(","))
-	return chunks
 }

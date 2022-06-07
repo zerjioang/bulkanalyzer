@@ -12,4 +12,6 @@ type Options struct {
 	Remove0xPrefix bool
 	// function used to parse the results of the analysis
 	Parser func(out []byte) [][]byte
+	// function used to build the command that triggers the analysis
+	BuildCommand func(address string, code string) string
 }

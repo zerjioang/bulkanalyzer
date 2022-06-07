@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/zerjioang/bulkanayzer"
+	"github.com/zerjioang/bulkanayzer/toolkit"
 	"log"
 	"os"
 )
@@ -18,7 +19,8 @@ func main() {
 		DockerImage:    "luongnguyen/oyente",
 		MaxContainers:  1,
 		Remove0xPrefix: true,
-		Parser:         bulkanalyzer.OyenteParser,
+		Parser:         toolkit.OyenteParser,
+		BuildCommand:   toolkit.OyenteCommand,
 	})
 	if err != nil {
 		log.Fatal(err)

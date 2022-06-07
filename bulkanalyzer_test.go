@@ -2,7 +2,7 @@ package bulkanalyzer
 
 import (
 	"github.com/stretchr/testify/assert"
-	"strings"
+	"github.com/zerjioang/bulkanayzer/toolkit"
 	"testing"
 )
 
@@ -17,7 +17,8 @@ func TestBulkAnalyze(t *testing.T) {
 			DockerImage:    "luongnguyen/oyente",
 			MaxContainers:  1,
 			Remove0xPrefix: true,
-			Parser:         OyenteParser,
+			Parser:         toolkit.OyenteParser,
+			BuildCommand:   toolkit.OyenteCommand,
 		}))
 	})
 	t.Run("sample-csv-100", func(t *testing.T) {
@@ -25,7 +26,8 @@ func TestBulkAnalyze(t *testing.T) {
 			DockerImage:    "luongnguyen/oyente",
 			MaxContainers:  1,
 			Remove0xPrefix: true,
-			Parser:         OyenteParser,
+			Parser:         toolkit.OyenteParser,
+			BuildCommand:   toolkit.OyenteCommand,
 		}))
 	})
 	t.Run("sample-csv-1000", func(t *testing.T) {
@@ -33,7 +35,8 @@ func TestBulkAnalyze(t *testing.T) {
 			DockerImage:    "luongnguyen/oyente",
 			MaxContainers:  1,
 			Remove0xPrefix: true,
-			Parser:         OyenteParser,
+			Parser:         toolkit.OyenteParser,
+			BuildCommand:   toolkit.OyenteCommand,
 		}))
 	})
 	t.Run("sample-csv-10000", func(t *testing.T) {
@@ -41,7 +44,8 @@ func TestBulkAnalyze(t *testing.T) {
 			DockerImage:    "luongnguyen/oyente",
 			MaxContainers:  1,
 			Remove0xPrefix: true,
-			Parser:         OyenteParser,
+			Parser:         toolkit.OyenteParser,
+			BuildCommand:   toolkit.OyenteCommand,
 		}))
 	})
 	t.Run("sample-csv-100000", func(t *testing.T) {
@@ -49,7 +53,8 @@ func TestBulkAnalyze(t *testing.T) {
 			DockerImage:    "luongnguyen/oyente",
 			MaxContainers:  1,
 			Remove0xPrefix: true,
-			Parser:         OyenteParser,
+			Parser:         toolkit.OyenteParser,
+			BuildCommand:   toolkit.OyenteCommand,
 		}))
 	})
 	t.Run("sample-csv-500000", func(t *testing.T) {
@@ -57,7 +62,8 @@ func TestBulkAnalyze(t *testing.T) {
 			DockerImage:    "luongnguyen/oyente",
 			MaxContainers:  1,
 			Remove0xPrefix: true,
-			Parser:         OyenteParser,
+			Parser:         toolkit.OyenteParser,
+			BuildCommand:   toolkit.OyenteCommand,
 		}))
 	})
 
@@ -75,13 +81,8 @@ INFO:symExec:	  Timestamp Dependency: 		         False
 INFO:symExec:	  Re-Entrancy Vulnerability: 		     False
 INFO:symExec:	====== Analysis Completed ======
 `
-		chunks := OyenteParser([]byte(exampleOutput))
-		sb := strings.Builder{}
-		for i := 0; i < len(chunks)-1; i++ {
-			sb.WriteString(string(chunks[i]))
-			sb.WriteString(" ")
-		}
-		sb.WriteString(string(chunks[len(chunks)-1]))
-		assert.Equal(t, sb.String(), "100.0 false false false false")
+		chunks := toolkit.OyenteParser([]byte(exampleOutput))
+		str := chunksToString(chunks)
+		assert.Equal(t, str, "100.0 false false false false")
 	})
 }
