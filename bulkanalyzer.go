@@ -5,6 +5,7 @@ import (
 	"encoding/csv"
 	"errors"
 	"fmt"
+	"github.com/zerjioang/bulkanalyzer/docker"
 	"io"
 	"log"
 	"os"
@@ -13,18 +14,14 @@ import (
 	"time"
 )
 
-const (
-	runCommand = `docker exec oyente bash -c "echo '%s' > /tmp/%s.bytecode && \
-cd /oyente/oyente && \
-python oyente.py -s /tmp/%s.bytecode -b && \
-rm -rf /tmp/%s.bytecode"`
-)
+type Analyzer struct {
+	// analyzer configuration parameters
+	opts *Options
+	// docker container manager
+	dockerManager docker.ContainerManager
+}
 
-var (
-	failedResponse = [][]byte{[]byte("0"), []byte(""), []byte(""), []byte(""), []byte(""), []byte("0"), []byte("true")}
-)
-
-func ExistFile(path string) bool {
+func (bulk *Analyzer) ExistFile(path string) bool {
 	if _, err := os.Stat(path); errors.Is(err, os.ErrNotExist) {
 		// path/to/whatever does not exist
 		return false
@@ -32,8 +29,9 @@ func ExistFile(path string) bool {
 	return true
 }
 
-func BulkAnalyze(csvPath string, opts *Options) error {
-	if !ExistFile(csvPath) {
+func (bulk *Analyzer) Run(csvPath string, opts *Options) error {
+	bulk.opts = opts
+	if !bulk.ExistFile(csvPath) {
 		return errors.New("provided CSV file does not exists")
 	}
 	// open file
@@ -62,40 +60,65 @@ func BulkAnalyze(csvPath string, opts *Options) error {
 	// now make sure required containers exists and are running
 	// if none found, we run the required ones
 	for i := uint(0); i < opts.MaxContainers; i++ {
-		runTargetContainer(i, opts.DockerImage)
+		bulk.runTargetContainer(i)
 	}
 
 	// read csv values using csv.Reader
 	csvReader := csv.NewReader(f)
+
+	// open file
+	fout, err := os.Create(csvPath + "_out.csv")
+	if err != nil {
+		return err
+	}
+	csvWriter := csv.NewWriter(fout)
+	defer func() {
+		csvWriter.Flush()
+		_ = fout.Close()
+	}()
+
 	var readErr error
 	var row []string
-	for err == nil {
+	// sequential analysis
+	// TODO add support for concurrent jobs using a worker pool and N docker containers
+	if bulk.opts.SkipHeaderRow {
+		_, _ = csvReader.Read()
+	}
+	for readErr == nil {
 		row, readErr = csvReader.Read()
 		if readErr != nil {
-			return readErr
+			if readErr != io.EOF {
+				return readErr
+			}
+			continue
 		}
 		address := row[1]
 		code := row[2]
-		// sequential analysis
-		// TODO add support for concurrent jobs
-		if len(code) > 2 && code[0] == '0' && code[1] == 'x' {
-			log.Printf("Analyzing contract %s with code size %d:\n", address, len(code))
-			result := triggerScanJob(address, code, opts)
-			fmt.Println(result)
+		log.Printf("Analyzing contract %s with code size %d:\n", address, len(code))
+		if opts.Remove0xPrefix {
+			if len(code) > 2 && code[0] == '0' && code[1] == 'x' {
+				code = code[2:]
+			}
 		}
-	}
-	if err != io.EOF {
-		return err
+		result := bulk.triggerScanJob(address, code)
+		// append sample identifier to the result
+		result = append(result, []byte(address))
+		if writeErr := csvWriter.Write(chunksToCSVrow(result)); writeErr != nil {
+			log.Println("error while csv writing:", writeErr)
+		}
+		log.Println(chunksToString(result))
 	}
 	return nil
 }
 
 // runTargetContainer will run the requested docker image into a new container
-func runTargetContainer(containerIdx uint, dockerImageName string) {
-
+func (bulk *Analyzer) runTargetContainer(containerIdx uint) {
+	opts := bulk.opts
+	imageName := opts.DockerImage
+	log.Println("Checking container", imageName)
 }
 
-func triggerScanJob(address string, code string, opts *Options) [][]byte {
+func (bulk *Analyzer) triggerScanJob(address string, code string) [][]byte {
 	// first thing: input data validation to avoid RCE
 	if err := IsValidAddress(address); err != nil {
 		panic(err)
@@ -104,6 +127,7 @@ func triggerScanJob(address string, code string, opts *Options) [][]byte {
 		panic(err)
 	}
 	// run docker image in background
+	opts := bulk.opts
 	if opts.Remove0xPrefix {
 		if len(code) > 2 && code[0] == '0' && code[1] == 'x' {
 			// remove 0x prefix from bytecode. this is a requirement of OYENTE (for example)
@@ -112,9 +136,9 @@ func triggerScanJob(address string, code string, opts *Options) [][]byte {
 	}
 	scanContract := opts.BuildCommand(address, code)
 	start := time.Now()
-	result, err := runArbitraryCode("bash", []string{"-c", scanContract}...)
+	result, err := bulk.runArbitraryCode("bash", []string{"-c", scanContract}...)
 	if err != nil {
-		return failedResponse
+		return opts.OnFailedReturn()
 	}
 	diff := time.Since(start).Milliseconds()
 	output := opts.Parser([]byte(result))
@@ -125,7 +149,9 @@ func triggerScanJob(address string, code string, opts *Options) [][]byte {
 	return output
 }
 
-func runArbitraryCode(command string, args ...string) (string, error) {
+// runArbitraryCode runs given command with arguments
+// WARNING: be very careful when calling this function!
+func (bulk *Analyzer) runArbitraryCode(command string, args ...string) (string, error) {
 	cmd := exec.Command(command, args...)
 	stderr, _ := cmd.StderrPipe()
 	err := cmd.Start()

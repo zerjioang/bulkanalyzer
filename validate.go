@@ -9,7 +9,7 @@ var (
 	// address validation regex
 	addressRe = regexp.MustCompile("^0x[0-9a-fA-F]{40}$")
 	// bytecode validation regex
-	bytecodeRe = regexp.MustCompile("^0x[0-9a-fA-F]+$")
+	bytecodeRe = regexp.MustCompile("^(0x)?[0-9a-fA-F]+$")
 )
 
 // IsValidAddress return error when invalid address is provided

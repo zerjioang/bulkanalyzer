@@ -11,3 +11,8 @@ func VandalCommand(address string, code string) string {
 	// example command
 	return ""
 }
+
+// VandalFailedResult returns Vandal default structured failed result data
+func VandalFailedResult() [][]byte {
+	return nil
+}

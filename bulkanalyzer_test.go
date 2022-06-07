@@ -13,55 +13,67 @@ const (
 
 func TestBulkAnalyze(t *testing.T) {
 	t.Run("sample-csv-10", func(t *testing.T) {
-		assert.NoError(t, BulkAnalyze(basepath+"testdata/eth_contracts_2020_2022_10_samples.csv", &Options{
+		var analyzer Analyzer
+		assert.NoError(t, analyzer.Run(basepath+"testdata/eth_contracts_2020_2022_10_samples.csv", &Options{
 			DockerImage:    "luongnguyen/oyente",
 			MaxContainers:  1,
 			Remove0xPrefix: true,
+			SkipHeaderRow:  true,
 			Parser:         toolkit.OyenteParser,
 			BuildCommand:   toolkit.OyenteCommand,
 		}))
 	})
 	t.Run("sample-csv-100", func(t *testing.T) {
-		assert.NoError(t, BulkAnalyze(basepath+"testdata/eth_contracts_2020_2022_100_samples.csv", &Options{
+		var analyzer Analyzer
+		assert.NoError(t, analyzer.Run(basepath+"testdata/eth_contracts_2020_2022_100_samples.csv", &Options{
 			DockerImage:    "luongnguyen/oyente",
 			MaxContainers:  1,
 			Remove0xPrefix: true,
+			SkipHeaderRow:  true,
 			Parser:         toolkit.OyenteParser,
 			BuildCommand:   toolkit.OyenteCommand,
 		}))
 	})
 	t.Run("sample-csv-1000", func(t *testing.T) {
-		assert.NoError(t, BulkAnalyze(basepath+"testdata/eth_contracts_2020_2022_1000_samples.csv", &Options{
+		var analyzer Analyzer
+		assert.NoError(t, analyzer.Run(basepath+"testdata/eth_contracts_2020_2022_1000_samples.csv", &Options{
 			DockerImage:    "luongnguyen/oyente",
 			MaxContainers:  1,
 			Remove0xPrefix: true,
+			SkipHeaderRow:  true,
 			Parser:         toolkit.OyenteParser,
 			BuildCommand:   toolkit.OyenteCommand,
 		}))
 	})
 	t.Run("sample-csv-10000", func(t *testing.T) {
-		assert.NoError(t, BulkAnalyze(basepath+"testdata/eth_contracts_2020_2022_10000_samples.csv", &Options{
+		var analyzer Analyzer
+		assert.NoError(t, analyzer.Run(basepath+"testdata/eth_contracts_2020_2022_10000_samples.csv", &Options{
 			DockerImage:    "luongnguyen/oyente",
 			MaxContainers:  1,
 			Remove0xPrefix: true,
+			SkipHeaderRow:  true,
 			Parser:         toolkit.OyenteParser,
 			BuildCommand:   toolkit.OyenteCommand,
 		}))
 	})
 	t.Run("sample-csv-100000", func(t *testing.T) {
-		assert.NoError(t, BulkAnalyze(basepath+"testdata/eth_contracts_2020_2022_100000_samples.csv", &Options{
+		var analyzer Analyzer
+		assert.NoError(t, analyzer.Run(basepath+"testdata/eth_contracts_2020_2022_100000_samples.csv", &Options{
 			DockerImage:    "luongnguyen/oyente",
 			MaxContainers:  1,
 			Remove0xPrefix: true,
+			SkipHeaderRow:  true,
 			Parser:         toolkit.OyenteParser,
 			BuildCommand:   toolkit.OyenteCommand,
 		}))
 	})
 	t.Run("sample-csv-500000", func(t *testing.T) {
-		assert.NoError(t, BulkAnalyze(basepath+"testdata/eth_contracts_2020_2022_500000_samples.csv", &Options{
+		var analyzer Analyzer
+		assert.NoError(t, analyzer.Run(basepath+"testdata/eth_contracts_2020_2022_500000_samples.csv", &Options{
 			DockerImage:    "luongnguyen/oyente",
 			MaxContainers:  1,
 			Remove0xPrefix: true,
+			SkipHeaderRow:  true,
 			Parser:         toolkit.OyenteParser,
 			BuildCommand:   toolkit.OyenteCommand,
 		}))

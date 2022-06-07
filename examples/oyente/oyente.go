@@ -12,15 +12,18 @@ func main() {
 		log.Fatal("CSV filepath is missing in CLI argument call")
 	}
 	// filepath contains the path to existing CSV file
-	// however a malicious user can set any other file to be readed
+	// however a malicious user can set any other file to be read
 	// TODO add filepath validation
 	filepath := os.Args[1]
-	err := bulkanalyzer.BulkAnalyze(filepath, &bulkanalyzer.Options{
+	var analyzer bulkanalyzer.Analyzer
+	err := analyzer.Run(filepath, &bulkanalyzer.Options{
 		DockerImage:    "luongnguyen/oyente",
 		MaxContainers:  1,
 		Remove0xPrefix: true,
+		SkipHeaderRow:  true,
 		Parser:         toolkit.OyenteParser,
 		BuildCommand:   toolkit.OyenteCommand,
+		OnFailedReturn: toolkit.OyenteFailedResult,
 	})
 	if err != nil {
 		log.Fatal(err)

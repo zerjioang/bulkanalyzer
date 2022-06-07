@@ -12,3 +12,5 @@ target/
 
 # exclude vendor
 vendor/
+
+*_out.csv

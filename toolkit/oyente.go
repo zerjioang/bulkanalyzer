@@ -3,6 +3,7 @@ package toolkit
 import (
 	"bytes"
 	"fmt"
+	"regexp"
 )
 
 const (
@@ -13,6 +14,7 @@ rm -rf /tmp/%s.bytecode"`
 )
 
 var (
+	pushRegex, _ = regexp.Compile(`incomplete push instruction at \d+`)
 	// OYENTE tool failed response
 	failedResponse = [][]byte{[]byte("0"), []byte(""), []byte(""), []byte(""), []byte(""), []byte("0"), []byte("true")}
 )
@@ -27,6 +29,9 @@ var (
 // OyenteParser is the parser designed to convert OYENTE tool output to structured format
 func OyenteParser(out []byte) [][]byte {
 	none := []byte("")
+	// remove error logs
+	// incomplete push instruction at 3529
+	out = pushRegex.ReplaceAll(out, none)
 	out = bytes.ReplaceAll(out, []byte("WARNING:root:You are using evm version 1.8.2. The supported version is 1.7.3"), none)
 	out = bytes.ReplaceAll(out, []byte("WARNING:root:You are using solc version 0.4.21, The latest supported version is 0.4.19"), none)
 	out = bytes.ReplaceAll(out, []byte("============ Results ==========="), none)
@@ -59,4 +64,9 @@ func OyenteCommand(address string, code string) string {
 	// example command
 	// docker exec -i oyente python /oyente/oyente/oyente.py -s /tmp/0x5519ab3fa3fa3a5adce56bc57905195d1599f6b2.bytecode -b
 	return fmt.Sprintf(runCommand, code, address, address, address)
+}
+
+// OyenteFailedResult returns OYENTE default structured failed result data
+func OyenteFailedResult() [][]byte {
+	return failedResponse
 }
