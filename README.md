@@ -2,7 +2,6 @@
   <img alt="BulkAnalyzer Logo" src="./readme/cover.png" width="auto"></img>
 </p>
 
-
 [![made-with-Go](https://img.shields.io/badge/Made%20with-Go-1f425f.svg)](https://go.dev/)
 [![License](https://img.shields.io/badge/LICENSE-GPLv3-brightgreen.svg)](https://go.dev/)
 [![GitHub go.mod Go version of a Go module](https://img.shields.io/github/go-mod/go-version/zerjioang/bulkanalyzer.svg)](https://github.com/zerjioang/bulkanalyzer)
@@ -19,6 +18,8 @@ We do not recommend to use this tool in any production related scenario. It stil
 ## Built-in analyzers support
 
 * Oyente: at single core speed: 1.66 contracts/second
+* Vandal: WIP
+* Conkas: WIP
 
 ## Latest release
 
