@@ -1,8 +1,8 @@
 package toolkit
 
 // VandalParser is the parser designed to convert VANDAL tool output to structured format
-func VandalParser(out []byte) [][]byte {
-	return nil
+func VandalParser(out []byte) ([][]byte, error) {
+	return nil, nil
 }
 
 // VandalCommand generates the CLI command that triggers the analysis
@@ -13,6 +13,6 @@ func VandalCommand(address string, code string) string {
 }
 
 // VandalFailedResult returns Vandal default structured failed result data
-func VandalFailedResult() [][]byte {
-	return nil
+func VandalFailedResult() ([][]byte, error) {
+	return nil, nil
 }
