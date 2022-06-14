@@ -18,6 +18,7 @@ We do not recommend to use this tool in any production related scenario. It stil
 ## Built-in analyzers support
 
 * Oyente: at single core speed: 1.66 contracts/second
+* Honeybadger: WIP
 * Vandal: WIP
 * Conkas: WIP
 
