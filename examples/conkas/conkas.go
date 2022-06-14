@@ -18,6 +18,7 @@ func main() {
 	var analyzer bulkanalyzer.Analyzer
 	err := analyzer.Run(filepath, &bulkanalyzer.Options{
 		DockerImage:    "conkas:8b1ce39",
+		ToolName:       "conkas",
 		MaxContainers:  1,
 		Remove0xPrefix: true,
 		SkipHeaderRow:  true,

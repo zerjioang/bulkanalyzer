@@ -66,8 +66,11 @@ func (bulk *Analyzer) Run(csvPath string, opts *Options) error {
 	// read csv values using csv.Reader
 	csvReader := csv.NewReader(f)
 
+	if !opts.ValidToolName() {
+		return errors.New("provided tool name is not allowed")
+	}
 	// open file
-	fout, err := os.Create(csvPath + "_out.csv")
+	fout, err := os.Create(csvPath + "_" + opts.ToolName + "_out.csv")
 	if err != nil {
 		return err
 	}
@@ -80,7 +83,7 @@ func (bulk *Analyzer) Run(csvPath string, opts *Options) error {
 	var readErr error
 	var row []string
 	// sequential analysis
-	// TODO add support for concurrent jobs using a worker pool and N docker containers
+	// TODO add support for concurrent jobs using a worAnalyzing contract ker pool and N docker containers
 	if bulk.opts.SkipHeaderRow {
 		_, _ = csvReader.Read()
 	}

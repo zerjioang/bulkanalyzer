@@ -19,6 +19,7 @@ func main() {
 	err := analyzer.Run(filepath, &bulkanalyzer.Options{
 		DockerImage:    "luongnguyen/oyente",
 		MaxContainers:  1,
+		ToolName:       "oyente",
 		Remove0xPrefix: true,
 		SkipHeaderRow:  true,
 		Parser:         toolkit.OyenteParser,

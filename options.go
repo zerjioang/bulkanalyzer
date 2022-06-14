@@ -4,6 +4,8 @@ package bulkanalyzer
 type Options struct {
 	// name of the docker image to execute
 	DockerImage string
+	// name of the tool being used
+	ToolName string
 	// number of containers to deploy
 	// this is required for parallel analysis execution using
 	// different workers (containers)
@@ -20,4 +22,16 @@ type Options struct {
 	OnFailedReturn func() ([][]byte, error)
 	// debug flag to enable a more verbose output
 	Debug bool
+}
+
+// ValidToolName returns true when tool name has a valid value
+// Use this check to avoid directory traversing bugs
+func (o Options) ValidToolName() bool {
+	str := o.ToolName
+	valid := true
+	for i := 0; i < len(str) && valid; i++ {
+		c := str[i]
+		valid = (c >= '0' && c <= '9') || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')
+	}
+	return valid
 }

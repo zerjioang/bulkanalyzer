@@ -18,6 +18,7 @@ func main() {
 	var analyzer bulkanalyzer.Analyzer
 	err := analyzer.Run(filepath, &bulkanalyzer.Options{
 		DockerImage:    "luongnguyen/oyente",
+		ToolName:       "vandal",
 		MaxContainers:  1,
 		Remove0xPrefix: true,
 		SkipHeaderRow:  true,
