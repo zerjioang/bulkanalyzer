@@ -11,13 +11,13 @@ const (
 	basepath = "/home/sergio/go/src/github.com/zerjioang/bulkanalyzer/"
 )
 
-func TestBulkAnalyzeWithOyente(t *testing.T) {
+func TestBulk(t *testing.T) {
 	t.Run("sample-csv-10", func(t *testing.T) {
 		var analyzer Analyzer
 		assert.NoError(t, analyzer.Run(basepath+"testdata/eth_contracts_2020_2022_10_samples.csv", &Options{
 			DockerImage:    "luongnguyen/oyente",
 			ToolName:       "oyente",
-			MaxContainers:  4,
+			MaxContainers:  1,
 			Remove0xPrefix: true,
 			SkipHeaderRow:  true,
 			Parser:         toolkit.OyenteParser,
@@ -92,6 +92,22 @@ func TestBulkAnalyzeWithOyente(t *testing.T) {
 	})
 }
 
+func TestBulkAnalyzeWithOyente(t *testing.T) {
+	t.Run("sample-csv-10", func(t *testing.T) {
+		var analyzer Analyzer
+		assert.NoError(t, analyzer.Run(basepath+"testdata/eth_contracts_2020_2022_10_samples.csv", &Options{
+			DockerImage:    "luongnguyen/oyente",
+			ToolName:       "oyente",
+			MaxContainers:  4,
+			Remove0xPrefix: true,
+			SkipHeaderRow:  true,
+			Parser:         toolkit.OyenteParser,
+			BuildCommand:   toolkit.OyenteCommand,
+			OnFailedReturn: toolkit.OyenteFailedResult,
+		}))
+	})
+}
+
 func TestBulkAnalyzeWithHoneybadger(t *testing.T) {
 	t.Run("sample-csv-10", func(t *testing.T) {
 		var analyzer Analyzer
@@ -124,18 +140,18 @@ func TestBulkAnalyzeWithConkas(t *testing.T) {
 	})
 }
 
-func TestBulkAnalyzeWithSecurify2(t *testing.T) {
+func TestBulkAnalyzeWithSecurify1(t *testing.T) {
 	t.Run("sample-csv-10", func(t *testing.T) {
 		var analyzer Analyzer
 		assert.NoError(t, analyzer.Run(basepath+"testdata/eth_contracts_2020_2022_10_samples.csv", &Options{
-			DockerImage:    "troublor/securify2:latest",
-			ToolName:       "securify2",
+			DockerImage:    "securify:latest",
+			ToolName:       "securify1",
 			MaxContainers:  4,
 			Remove0xPrefix: true,
 			SkipHeaderRow:  true,
-			Parser:         toolkit.Securify2Parser,
-			BuildCommand:   toolkit.Securify2Command,
-			OnFailedReturn: toolkit.Securify2FailedResult,
+			Parser:         toolkit.Securify1Parser,
+			BuildCommand:   toolkit.Securify1Command,
+			OnFailedReturn: toolkit.Securify1FailedResult,
 		}))
 	})
 }

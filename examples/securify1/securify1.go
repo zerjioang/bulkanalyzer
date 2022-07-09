@@ -17,14 +17,14 @@ func main() {
 	filepath := os.Args[1]
 	var analyzer bulkanalyzer.Analyzer
 	err := analyzer.Run(filepath, &bulkanalyzer.Options{
-		DockerImage:    "troublor/securify2",
-		ToolName:       "securify2",
+		DockerImage:    "securify:latest",
+		ToolName:       "securify1",
 		MaxContainers:  1,
 		Remove0xPrefix: true,
 		SkipHeaderRow:  true,
-		Parser:         toolkit.Securify2Parser,
-		BuildCommand:   toolkit.Securify2Command,
-		OnFailedReturn: toolkit.Securify2FailedResult,
+		Parser:         toolkit.Securify1Parser,
+		BuildCommand:   toolkit.Securify1Command,
+		OnFailedReturn: toolkit.Securify1FailedResult,
 	})
 	if err != nil {
 		log.Fatal(err)

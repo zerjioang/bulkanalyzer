@@ -11,6 +11,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"strings"
 )
 
 // ContainerManager is a wrapper over Docker SDK to easily manage docker container status
@@ -24,13 +25,15 @@ func (cm *ContainerManager) RunContainer(containerName string, imageName string)
 	if err != nil {
 		return nil, err
 	}
-	out, err := cli.ImagePull(ctx, imageName, types.ImagePullOptions{})
-	if err != nil {
-		return nil, err
-	}
-	defer out.Close()
 
-	io.Copy(os.Stdout, out)
+	if strings.Contains(imageName, "/") {
+		out, err := cli.ImagePull(ctx, imageName, types.ImagePullOptions{})
+		if err != nil {
+			return nil, err
+		}
+		defer out.Close()
+		io.Copy(os.Stdout, out)
+	}
 
 	resp, err := cli.ContainerCreate(ctx, &container.Config{
 		Image:        imageName,

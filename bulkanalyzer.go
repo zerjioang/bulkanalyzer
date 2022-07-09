@@ -1,17 +1,16 @@
 package bulkanalyzer
 
 import (
-	"bufio"
 	"encoding/csv"
 	"errors"
 	"fmt"
 	"github.com/docker/docker/api/types"
+	"github.com/gammazero/workerpool"
 	"github.com/zerjioang/bulkanalyzer/docker"
 	"io"
 	"log"
 	"os"
 	"os/exec"
-	"strings"
 	"time"
 )
 
@@ -62,6 +61,10 @@ func (bulk *Analyzer) Run(csvPath string, opts *Options) error {
 		return errors.New("a command builder is required before running the analysis")
 	}
 
+	if !opts.ValidToolName() {
+		return errors.New("provided tool name is not allowed")
+	}
+
 	// stop all existing containers first
 	if false {
 		if err := bulk.dockerManager.StopAllContainers(); err != nil {
@@ -81,11 +84,11 @@ func (bulk *Analyzer) Run(csvPath string, opts *Options) error {
 	// read csv values using csv.Reader
 	csvReader := csv.NewReader(f)
 
-	if !opts.ValidToolName() {
-		return errors.New("provided tool name is not allowed")
-	}
 	// open file
-	fout, err := os.Create(csvPath + "_" + opts.ToolName + "_out.csv")
+	outfile := csvPath + "_" + opts.ToolName + "_out.csv"
+	log.Println("output file:", outfile)
+
+	fout, err := os.Create(outfile)
 	if err != nil {
 		return err
 	}
@@ -94,6 +97,9 @@ func (bulk *Analyzer) Run(csvPath string, opts *Options) error {
 		csvWriter.Flush()
 		_ = fout.Close()
 	}()
+
+	// create the worker pool
+	wp := workerpool.New(int(opts.MaxContainers))
 
 	var readErr error
 	var row []string
@@ -118,19 +124,27 @@ func (bulk *Analyzer) Run(csvPath string, opts *Options) error {
 			continue
 		}
 		targetContainer := bulk.pickAvailableRunner()
-		result, scanErr := bulk.triggerScanJob(idx, address, code, targetContainer)
-		if scanErr == nil {
-			// append sample identifier to the result
-			result = append(result, []byte(address))
-			if writeErr := csvWriter.Write(chunksToCSVrow(result)); writeErr != nil {
-				log.Println("error while csv writing:", writeErr)
+		wp.Submit(func() {
+			target := targetContainer
+			workerCode := code
+			workerAddr := address
+			writer := csvWriter
+			idx++
+			bulk.lastUsedContainer++
+			result, scanErr := bulk.triggerScanJob(idx, workerAddr, workerCode, target)
+			if scanErr == nil {
+				// append sample identifier to the result
+				result = append(result, []byte(workerAddr))
+				if writeErr := writer.Write(chunksToCSVrow(result)); writeErr != nil {
+					log.Println("error while csv writing:", writeErr)
+				}
+				if opts.Debug {
+					log.Println(chunksToString(result))
+				}
 			}
-			if opts.Debug {
-				log.Println(chunksToString(result))
-			}
-		}
-		idx++
+		})
 	}
+	wp.StopWait()
 	return nil
 }
 
@@ -167,8 +181,8 @@ func (bulk *Analyzer) runTargetContainer(containerIdx uint) {
 }
 
 func (bulk *Analyzer) triggerScanJob(idx uint64, address string, code string, targetContainer *types.Container) ([][]byte, error) {
-	bulk.lastUsedContainer++
 	log.Printf("[%d] [Runner:%s] Analyzing contract %s with code size %d:\n", idx, targetContainer.Names[0], address, len(code))
+	defer log.Printf("[%d] [Runner:%s] finished %s\n", idx, targetContainer.Names[0], address)
 	// first thing: input data validation to avoid RCE
 	if err := IsValidAddress(address); err != nil {
 		panic(err)
@@ -190,7 +204,7 @@ func (bulk *Analyzer) triggerScanJob(idx uint64, address string, code string, ta
 		return opts.OnFailedReturn()
 	}
 	diff := time.Since(start).Milliseconds()
-	output, err := opts.Parser([]byte(result))
+	output, err := opts.Parser(result)
 	if err != nil {
 		return opts.OnFailedReturn()
 	}
@@ -203,14 +217,7 @@ func (bulk *Analyzer) triggerScanJob(idx uint64, address string, code string, ta
 
 // runArbitraryCode runs given command with arguments
 // WARNING: be very careful when calling this function!
-func (bulk *Analyzer) runArbitraryCode(command string, args ...string) (string, error) {
+func (bulk *Analyzer) runArbitraryCode(command string, args ...string) ([]byte, error) {
 	cmd := exec.Command(command, args...)
-	stderr, _ := cmd.StderrPipe()
-	err := cmd.Start()
-	scanner := bufio.NewScanner(stderr)
-	var b strings.Builder
-	for scanner.Scan() {
-		b.WriteString(scanner.Text())
-	}
-	return b.String(), err
+	return cmd.Output()
 }
