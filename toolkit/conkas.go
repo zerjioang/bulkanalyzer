@@ -7,7 +7,7 @@ func ConkasParser(out []byte) ([][]byte, error) {
 
 // ConkasCommand generates the CLI command that triggers the analysis
 // NOTE: make sure that input data is correctly sanitized
-func ConkasCommand(address string, code string) string {
+func ConkasCommand(containerName string, address string, code string) string {
 	// example command
 	return ""
 }

@@ -5,6 +5,7 @@ import (
 	"encoding/csv"
 	"errors"
 	"fmt"
+	"github.com/docker/docker/api/types"
 	"github.com/zerjioang/bulkanalyzer/docker"
 	"io"
 	"log"
@@ -19,6 +20,9 @@ type Analyzer struct {
 	opts *Options
 	// docker container manager
 	dockerManager docker.ContainerManager
+	containers    []*types.Container
+	// to implement round robbin algorithm
+	lastUsedContainer uint
 }
 
 func (bulk *Analyzer) ExistFile(path string) bool {
@@ -31,6 +35,7 @@ func (bulk *Analyzer) ExistFile(path string) bool {
 
 func (bulk *Analyzer) Run(csvPath string, opts *Options) error {
 	bulk.opts = opts
+	bulk.containers = []*types.Container{}
 	if !bulk.ExistFile(csvPath) {
 		return errors.New("provided CSV file does not exists")
 	}
@@ -55,6 +60,16 @@ func (bulk *Analyzer) Run(csvPath string, opts *Options) error {
 	// make sure we have a valid command builder set
 	if opts.BuildCommand == nil {
 		return errors.New("a command builder is required before running the analysis")
+	}
+
+	// stop all existing containers first
+	if false {
+		if err := bulk.dockerManager.StopAllContainers(); err != nil {
+			log.Println("failed to stop one or more containers")
+		}
+		if err := bulk.dockerManager.RemoveAllContainers(); err != nil {
+			log.Println("failed to delete one or more containers")
+		}
 	}
 
 	// now make sure required containers exists and are running
@@ -83,7 +98,7 @@ func (bulk *Analyzer) Run(csvPath string, opts *Options) error {
 	var readErr error
 	var row []string
 	// sequential analysis
-	// TODO add support for concurrent jobs using a worAnalyzing contract ker pool and N docker containers
+	// TODO add support for concurrent jobs using a worker pool and N docker containers
 	if bulk.opts.SkipHeaderRow {
 		_, _ = csvReader.Read()
 	}
@@ -102,7 +117,8 @@ func (bulk *Analyzer) Run(csvPath string, opts *Options) error {
 			// skip empty bytecodes (those destructed)
 			continue
 		}
-		result, scanErr := bulk.triggerScanJob(idx, address, code)
+		targetContainer := bulk.pickAvailableRunner()
+		result, scanErr := bulk.triggerScanJob(idx, address, code, targetContainer)
 		if scanErr == nil {
 			// append sample identifier to the result
 			result = append(result, []byte(address))
@@ -118,15 +134,41 @@ func (bulk *Analyzer) Run(csvPath string, opts *Options) error {
 	return nil
 }
 
+// pickAvailableRunner returns the first available runner
+func (bulk *Analyzer) pickAvailableRunner() *types.Container {
+	// select the next container based on round robbin algorithm
+	// simplest way but not optimal
+	return bulk.containers[int(bulk.lastUsedContainer)%len(bulk.containers)]
+}
+
 // runTargetContainer will run the requested docker image into a new container
 func (bulk *Analyzer) runTargetContainer(containerIdx uint) {
 	opts := bulk.opts
 	imageName := opts.DockerImage
 	log.Println("Checking container", imageName)
+	containerName := fmt.Sprintf("%s_%d", bulk.opts.ToolName, containerIdx)
+	container, err := bulk.dockerManager.IsContainerAlive(containerName)
+	if err != nil {
+		// container might not be alive
+		log.Println(err)
+		createdCont, err := bulk.dockerManager.RunContainer(containerName, imageName)
+		if err != nil {
+			log.Println("failed to create the container:", err)
+			return
+		} else {
+			// store created container information
+			bulk.containers = append(bulk.containers, createdCont)
+		}
+	} else {
+		log.Println("container found with ID:", container.ID)
+		// store created container information
+		bulk.containers = append(bulk.containers, container)
+	}
 }
 
-func (bulk *Analyzer) triggerScanJob(idx uint64, address string, code string) ([][]byte, error) {
-	log.Printf("[%d] Analyzing contract %s with code size %d:\n", idx, address, len(code))
+func (bulk *Analyzer) triggerScanJob(idx uint64, address string, code string, targetContainer *types.Container) ([][]byte, error) {
+	bulk.lastUsedContainer++
+	log.Printf("[%d] [Runner:%s] Analyzing contract %s with code size %d:\n", idx, targetContainer.Names[0], address, len(code))
 	// first thing: input data validation to avoid RCE
 	if err := IsValidAddress(address); err != nil {
 		panic(err)
@@ -141,7 +183,7 @@ func (bulk *Analyzer) triggerScanJob(idx uint64, address string, code string) ([
 			code = code[2:]
 		}
 	}
-	scanContract := opts.BuildCommand(address, code)
+	scanContract := opts.BuildCommand(targetContainer.Names[0], address, code)
 	start := time.Now()
 	result, err := bulk.runArbitraryCode("bash", []string{"-c", scanContract}...)
 	if err != nil {

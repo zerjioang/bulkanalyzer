@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	runOyenteCommand = `docker exec oyente bash -c "echo '%s' > /tmp/%s.bytecode && \
+	runOyenteCommand = `docker exec %s bash -c "echo '%s' > /tmp/%s.bytecode && \
 cd /oyente/oyente && \
 python oyente.py -s /tmp/%s.bytecode -b && \
 rm -rf /tmp/%s.bytecode"`
@@ -65,10 +65,15 @@ func OyenteParser(out []byte) ([][]byte, error) {
 
 // OyenteCommand generates the CLI command that triggers the analysis
 // NOTE: make sure that input data is correctly sanitized
-func OyenteCommand(address string, code string) string {
+func OyenteCommand(containerName string, address string, code string) string {
 	// example command
-	// docker exec -i oyente python /oyente/oyente/oyente.py -s /tmp/0x5519ab3fa3fa3a5adce56bc57905195d1599f6b2.bytecode -b
-	return fmt.Sprintf(runOyenteCommand, code, address, address, address)
+	// docker exec -i yente python /oyente/oyente/oyente.py -s /tmp/0x5519ab3fa3fa3a5adce56bc57905195d1599f6b2.bytecode -b
+
+	// remove starting slash
+	if containerName[0] == '/' {
+		containerName = containerName[1:]
+	}
+	return fmt.Sprintf(runOyenteCommand, containerName, code, address, address, address)
 }
 
 // OyenteFailedResult returns OYENTE default structured failed result data

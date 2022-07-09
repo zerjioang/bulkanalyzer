@@ -17,7 +17,7 @@ type Options struct {
 	// function used to parse the results of the analysis
 	Parser func(out []byte) ([][]byte, error)
 	// function used to build the command that triggers the analysis
-	BuildCommand func(address string, code string) string
+	BuildCommand func(containerName string, address string, code string) string
 	// function that returns a pre-defined failed return result in a structured format
 	OnFailedReturn func() ([][]byte, error)
 	// debug flag to enable a more verbose output

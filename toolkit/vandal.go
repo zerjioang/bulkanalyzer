@@ -7,7 +7,7 @@ func VandalParser(out []byte) ([][]byte, error) {
 
 // VandalCommand generates the CLI command that triggers the analysis
 // NOTE: make sure that input data is correctly sanitized
-func VandalCommand(address string, code string) string {
+func VandalCommand(containerName string, address string, code string) string {
 	// example command
 	return ""
 }

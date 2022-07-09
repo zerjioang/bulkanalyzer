@@ -8,15 +8,16 @@ import (
 
 const (
 	// TODO remove this hardcoded variable and convert it to ENV
-	basepath = "/home/sergio/GolandProjects/bulkanalyzer/"
+	basepath = "/home/sergio/go/src/github.com/zerjioang/bulkanalyzer/"
 )
 
-func TestBulkAnalyze(t *testing.T) {
+func TestBulkAnalyzeWithOyente(t *testing.T) {
 	t.Run("sample-csv-10", func(t *testing.T) {
 		var analyzer Analyzer
 		assert.NoError(t, analyzer.Run(basepath+"testdata/eth_contracts_2020_2022_10_samples.csv", &Options{
 			DockerImage:    "luongnguyen/oyente",
-			MaxContainers:  1,
+			ToolName:       "oyente",
+			MaxContainers:  4,
 			Remove0xPrefix: true,
 			SkipHeaderRow:  true,
 			Parser:         toolkit.OyenteParser,
@@ -28,6 +29,7 @@ func TestBulkAnalyze(t *testing.T) {
 		var analyzer Analyzer
 		assert.NoError(t, analyzer.Run(basepath+"testdata/eth_contracts_2020_2022_100_samples.csv", &Options{
 			DockerImage:    "luongnguyen/oyente",
+			ToolName:       "oyente",
 			MaxContainers:  1,
 			Remove0xPrefix: true,
 			SkipHeaderRow:  true,
@@ -40,6 +42,7 @@ func TestBulkAnalyze(t *testing.T) {
 		var analyzer Analyzer
 		assert.NoError(t, analyzer.Run(basepath+"testdata/eth_contracts_2020_2022_1000_samples.csv", &Options{
 			DockerImage:    "luongnguyen/oyente",
+			ToolName:       "oyente",
 			MaxContainers:  1,
 			Remove0xPrefix: true,
 			SkipHeaderRow:  true,
@@ -52,6 +55,7 @@ func TestBulkAnalyze(t *testing.T) {
 		var analyzer Analyzer
 		assert.NoError(t, analyzer.Run(basepath+"testdata/eth_contracts_2020_2022_10000_samples.csv", &Options{
 			DockerImage:    "luongnguyen/oyente",
+			ToolName:       "oyente",
 			MaxContainers:  1,
 			Remove0xPrefix: true,
 			SkipHeaderRow:  true,
@@ -64,6 +68,7 @@ func TestBulkAnalyze(t *testing.T) {
 		var analyzer Analyzer
 		assert.NoError(t, analyzer.Run(basepath+"testdata/eth_contracts_2020_2022_100000_samples.csv", &Options{
 			DockerImage:    "luongnguyen/oyente",
+			ToolName:       "oyente",
 			MaxContainers:  1,
 			Remove0xPrefix: true,
 			SkipHeaderRow:  true,
@@ -76,6 +81,7 @@ func TestBulkAnalyze(t *testing.T) {
 		var analyzer Analyzer
 		assert.NoError(t, analyzer.Run(basepath+"testdata/eth_contracts_2020_2022_500000_samples.csv", &Options{
 			DockerImage:    "luongnguyen/oyente",
+			ToolName:       "oyente",
 			MaxContainers:  1,
 			Remove0xPrefix: true,
 			SkipHeaderRow:  true,
@@ -84,7 +90,38 @@ func TestBulkAnalyze(t *testing.T) {
 			OnFailedReturn: toolkit.OyenteFailedResult,
 		}))
 	})
+}
 
+func TestBulkAnalyzeWithHoneybadger(t *testing.T) {
+	t.Run("sample-csv-10", func(t *testing.T) {
+		var analyzer Analyzer
+		assert.NoError(t, analyzer.Run(basepath+"testdata/eth_contracts_2020_2022_10_samples.csv", &Options{
+			DockerImage:    "christoftorres/honeybadger:latest",
+			ToolName:       "honeybadger",
+			MaxContainers:  4,
+			Remove0xPrefix: true,
+			SkipHeaderRow:  true,
+			Parser:         toolkit.HoneybadgerParser,
+			BuildCommand:   toolkit.HoneybadgerCommand,
+			OnFailedReturn: toolkit.HoneybadgerFailedResult,
+		}))
+	})
+}
+
+func TestBulkAnalyzeWithConkas(t *testing.T) {
+	t.Run("sample-csv-10", func(t *testing.T) {
+		var analyzer Analyzer
+		assert.NoError(t, analyzer.Run(basepath+"testdata/eth_contracts_2020_2022_10_samples.csv", &Options{
+			DockerImage:    "conkas:latest",
+			ToolName:       "conkas",
+			MaxContainers:  4,
+			Remove0xPrefix: true,
+			SkipHeaderRow:  true,
+			Parser:         toolkit.ConkasParser,
+			BuildCommand:   toolkit.ConkasCommand,
+			OnFailedReturn: toolkit.ConkasFailedResult,
+		}))
+	})
 }
 
 func TestParseResults(t *testing.T) {

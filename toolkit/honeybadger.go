@@ -9,7 +9,7 @@ import (
 // tool: https://github.com/christoftorres/HoneyBadger
 
 const (
-	runHoneyBadgerCommand = `docker exec honeybadger bash -c "echo '%s' > /tmp/%s.bytecode && \
+	runHoneyBadgerCommand = `docker exec %s bash -c "echo '%s' > /tmp/%s.bytecode && \
 cd /root/honeybadger && \
 python honeybadger.py -s /tmp/%s.bytecode -b && \
 rm -rf /tmp/%s.bytecode"`
@@ -64,7 +64,7 @@ func HoneybadgerParser(out []byte) ([][]byte, error) {
 	raw := string(out)
 	lines := strings.Split(raw, "INFO:symExec:\t ")
 	var names []string
-	var structured []string
+	var structured [][]byte
 	for _, l := range lines {
 		if strings.Contains(l, "Running, please wait...") {
 			continue
@@ -76,12 +76,12 @@ func HoneybadgerParser(out []byte) ([][]byte, error) {
 		k, v := structureRow(l)
 		if k != "" && v != "" {
 			names = append(names, k)
-			structured = append(structured, v)
+			structured = append(structured, []byte(v))
 		}
 	}
-	fmt.Println(names)
-	fmt.Println(structured)
-	return nil, nil
+	//fmt.Println(names)
+	//fmt.Println(structured)
+	return structured, nil
 }
 
 func structureRow(row string) (string, string) {
@@ -107,10 +107,15 @@ func structureRow(row string) (string, string) {
 
 // HoneybadgerCommand generates the CLI command that triggers the analysis
 // NOTE: make sure that input data is correctly sanitized
-func HoneybadgerCommand(address string, code string) string {
+func HoneybadgerCommand(containerName string, address string, code string) string {
 	// example command
 	// docker exec -i oyente python /root/honeybadger/honeybadger.py -s /tmp/0x5519ab3fa3fa3a5adce56bc57905195d1599f6b2.bytecode -b
-	return fmt.Sprintf(runHoneyBadgerCommand, code, address, address, address)
+
+	// remove starting slash
+	if containerName[0] == '/' {
+		containerName = containerName[1:]
+	}
+	return fmt.Sprintf(runHoneyBadgerCommand, containerName, code, address, address, address)
 }
 
 // HoneybadgerFailedResult returns Honeybadger default structured failed result data
