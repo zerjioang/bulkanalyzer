@@ -4,32 +4,17 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"regexp"
 )
 
 const (
-	runOyenteCommand = `docker exec %s bash -c "echo '%s' > /tmp/%s.bytecode && \
+	runSecurifyCommand = `docker exec %s bash -c "echo '%s' > /tmp/%s.bytecode && \
 cd /oyente/oyente && \
 python oyente.py -s /tmp/%s.bytecode -b && \
 rm -rf /tmp/%s.bytecode"`
 )
 
-var (
-	pushRegex, _ = regexp.Compile(`incomplete push instruction at \d+`)
-	falseBytes   = []byte("false")
-	// OYENTE tool failed response
-	failedResponse = [][]byte{[]byte("0.0"), falseBytes, falseBytes, falseBytes, falseBytes, []byte("0"), []byte("true")}
-)
-
-// runArbitraryCode("docker", args("run -it -d --name oyente luongnguyen/oyente")...)
-// 1 copy code to file and run the analysis
-// docker exec -it oyente bash -c "echo '0x6d4946c0e9f43f4dee607b0ef1fa1c3318585733ff' > /tmp/0x5519ab3fa3fa3a5adce56bc57905195d1599f6b2.bytecode && \
-// cd /oyente/oyente && \
-// python oyente.py -s /tmp/0x5519ab3fa3fa3a5adce56bc57905195d1599f6b2.bytecode -b \
-// rm -rf /tmp/0x5519ab3fa3fa3a5adce56bc57905195d1599f6b2.bytecode"
-
-// OyenteParser is the parser designed to convert OYENTE tool output to structured format
-func OyenteParser(out []byte) ([][]byte, error) {
+// Securify2Parser is the parser designed to convert Securify2 tool output to structured format
+func Securify2Parser(out []byte) ([][]byte, error) {
 	if bytes.Contains(out, []byte("Traceback (")) {
 		return nil, errors.New("oyente failed to run")
 	}
@@ -63,9 +48,9 @@ func OyenteParser(out []byte) ([][]byte, error) {
 	return chunks, nil
 }
 
-// OyenteCommand generates the CLI command that triggers the analysis
+// Securify2Command generates the CLI command that triggers the analysis
 // NOTE: make sure that input data is correctly sanitized
-func OyenteCommand(containerName string, address string, code string) string {
+func Securify2Command(containerName string, address string, code string) string {
 	// example command
 	// docker exec -i yente python /oyente/oyente/oyente.py -s /tmp/0x5519ab3fa3fa3a5adce56bc57905195d1599f6b2.bytecode -b
 
@@ -73,10 +58,10 @@ func OyenteCommand(containerName string, address string, code string) string {
 	if containerName[0] == '/' {
 		containerName = containerName[1:]
 	}
-	return fmt.Sprintf(runOyenteCommand, containerName, code, address, address, address)
+	return fmt.Sprintf(runSecurifyCommand, containerName, code, address, address, address)
 }
 
-// OyenteFailedResult returns OYENTE default structured failed result data
-func OyenteFailedResult() ([][]byte, error) {
+// Securify2FailedResult returns Securify2 default structured failed result data
+func Securify2FailedResult() ([][]byte, error) {
 	return failedResponse, nil
 }

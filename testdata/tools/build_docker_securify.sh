@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 
-echo "building conkas docker image"
-docker build -t conkas:latest .
+echo "building securify docker image"
+docker build -t securify:latest .

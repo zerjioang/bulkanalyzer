@@ -1,7 +1,7 @@
-# Example use with Conkas
+# Example use with Securify2
 
-This is an example application of how to use bulkanalyzer with **Conkas** tool
+This is an example application of how to use bulkanalyzer with **Securify2** tool
 
 ## Note
 
-* Conkas Docker image must be compile first and them execute the pipeline
+* Securify2 Docker image must be compile first and then execute the pipeline

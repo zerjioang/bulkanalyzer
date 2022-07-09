@@ -17,14 +17,14 @@ func main() {
 	filepath := os.Args[1]
 	var analyzer bulkanalyzer.Analyzer
 	err := analyzer.Run(filepath, &bulkanalyzer.Options{
-		DockerImage:    "conkas:latest",
-		ToolName:       "conkas",
+		DockerImage:    "troublor/securify2",
+		ToolName:       "securify2",
 		MaxContainers:  1,
 		Remove0xPrefix: true,
 		SkipHeaderRow:  true,
-		Parser:         toolkit.ConkasParser,
-		BuildCommand:   toolkit.ConkasCommand,
-		OnFailedReturn: toolkit.ConkasFailedResult,
+		Parser:         toolkit.Securify2Parser,
+		BuildCommand:   toolkit.Securify2Command,
+		OnFailedReturn: toolkit.Securify2FailedResult,
 	})
 	if err != nil {
 		log.Fatal(err)

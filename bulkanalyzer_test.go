@@ -124,6 +124,22 @@ func TestBulkAnalyzeWithConkas(t *testing.T) {
 	})
 }
 
+func TestBulkAnalyzeWithSecurify2(t *testing.T) {
+	t.Run("sample-csv-10", func(t *testing.T) {
+		var analyzer Analyzer
+		assert.NoError(t, analyzer.Run(basepath+"testdata/eth_contracts_2020_2022_10_samples.csv", &Options{
+			DockerImage:    "troublor/securify2:latest",
+			ToolName:       "securify2",
+			MaxContainers:  4,
+			Remove0xPrefix: true,
+			SkipHeaderRow:  true,
+			Parser:         toolkit.Securify2Parser,
+			BuildCommand:   toolkit.Securify2Command,
+			OnFailedReturn: toolkit.Securify2FailedResult,
+		}))
+	})
+}
+
 func TestParseResults(t *testing.T) {
 	t.Run("parse-oyente-output", func(t *testing.T) {
 		exampleOutput := `WARNING:root:You are using evm version 1.8.2. The supported version is 1.7.3
