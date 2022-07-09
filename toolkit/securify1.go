@@ -37,7 +37,7 @@ func Securify1Parser(out []byte) ([][]byte, error) {
 // NOTE: make sure that input data is correctly sanitized
 func Securify1Command(containerName string, address string, code string) string {
 	// example command
-	// docker exec -i yente python /oyente/oyente/oyente.py -s /tmp/0x5519ab3fa3fa3a5adce56bc57905195d1599f6b2.bytecode -b
+	// java -jar build/libs/securify.jar --json -fh /tmp/%s.bytecode
 
 	// remove starting slash
 	if containerName[0] == '/' {
